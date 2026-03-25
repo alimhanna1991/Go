@@ -4,12 +4,12 @@ This repository contains the deployment handoff note for the `webpage-analyzer` 
 
 Primary application path:
 
-- [`/home/ali/Projects/Go/webpage-analyzer`](/home/ali/Projects/Go/webpage-analyzer)
+- [`/Go/webpage-analyzer`](/Go/webpage-analyzer)
 
 ## Main Build Steps
 
 ```bash
-cd /home/ali/Projects/Go/webpage-analyzer
+cd /Go/webpage-analyzer
 go mod download
 go test ./...
 go build ./...
@@ -18,13 +18,13 @@ go build ./...
 ## Main Run Steps
 
 ```bash
-cd /home/ali/Projects/Go/webpage-analyzer
+cd /Go/webpage-analyzer
 go run .
 ```
 
 The application reads runtime configuration from:
 
-- [`/home/ali/Projects/Go/webpage-analyzer/config/app.yaml`](/home/ali/Projects/Go/webpage-analyzer/config/app.yaml)
+- [`/Go/webpage-analyzer/config/app.yaml`](/Go/webpage-analyzer/config/app.yaml)
 
 The listening port is controlled by:
 
