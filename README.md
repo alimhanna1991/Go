@@ -1,4 +1,3 @@
-cat > README.md << 'EOF'
 # Webpage Analyzer
 
 A production-ready web application built with Go that analyzes webpages and provides comprehensive insights about their structure, content, and accessibility.

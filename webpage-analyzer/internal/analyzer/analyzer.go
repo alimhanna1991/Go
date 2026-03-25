@@ -4,11 +4,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"strings"
 
 	"golang.org/x/net/html"
-
-	"webpage-analyzer/internal/models"
 )
 
 // Analyzer is the main analyzer facade
@@ -19,11 +16,10 @@ type Analyzer struct {
 	loginFormDetector   *LoginFormDetector
 	linkAnalyzer        *LinkAnalyzer
 	httpClient          HTTPClient
-	pageRenderer        PageRenderer
 }
 
 // NewAnalyzer creates a new analyzer with all dependencies
-func NewAnalyzer(httpClient HTTPClient, pageRenderer PageRenderer) *Analyzer {
+func NewAnalyzer(httpClient HTTPClient) *Analyzer {
 	return &Analyzer{
 		htmlVersionDetector: NewHTMLVersionDetector(),
 		titleExtractor:      NewTitleExtractor(),
@@ -31,17 +27,17 @@ func NewAnalyzer(httpClient HTTPClient, pageRenderer PageRenderer) *Analyzer {
 		loginFormDetector:   NewLoginFormDetector(),
 		linkAnalyzer:        NewLinkAnalyzer(httpClient),
 		httpClient:          httpClient,
-		pageRenderer:        pageRenderer,
 	}
 }
 
 // Analyze performs complete analysis of a webpage
-func (a *Analyzer) Analyze(targetURL string) (*models.AnalysisResult, error) {
-	result := &models.AnalysisResult{
+func (a *Analyzer) Analyze(targetURL string) (*AnalysisResult, error) {
+	result := &AnalysisResult{
 		URL:      targetURL,
 		Headings: make(map[string]int),
 	}
 
+	// Validate and normalize URL
 	normalizedURL, err := a.normalizeURL(targetURL)
 	if err != nil {
 		result.ErrorMessage = err.Error()
@@ -49,6 +45,7 @@ func (a *Analyzer) Analyze(targetURL string) (*models.AnalysisResult, error) {
 	}
 	result.URL = normalizedURL
 
+	// Fetch the page
 	resp, body, err := a.httpClient.Fetch(normalizedURL)
 	if err != nil {
 		result.ErrorMessage = fmt.Sprintf("Failed to fetch URL: %v", err)
@@ -59,42 +56,34 @@ func (a *Analyzer) Analyze(targetURL string) (*models.AnalysisResult, error) {
 		result.StatusCode = resp.StatusCode
 	}
 
-	if resp != nil && resp.StatusCode != http.StatusOK {
-		result.ErrorMessage = fmt.Sprintf("HTTP %d: %s", resp.StatusCode, http.StatusText(resp.StatusCode))
-	}
-
 	if body == nil {
+		if resp != nil && resp.StatusCode != 200 {
+			result.ErrorMessage = fmt.Sprintf("HTTP %d: %s", resp.StatusCode, http.StatusText(resp.StatusCode))
+		}
 		return result, nil
 	}
 	defer body.Close()
 
+	// Parse HTML
 	doc, err := html.Parse(body)
 	if err != nil {
 		result.ErrorMessage = fmt.Sprintf("Failed to parse HTML: %v", err)
 		return result, err
 	}
 
-	contentType := ""
-	if resp != nil {
-		contentType = resp.Header.Get("Content-Type")
-	}
-	result.HTMLVersion = a.htmlVersionDetector.Detect(doc, contentType)
+	// Perform analysis
+	result.HTMLVersion = a.htmlVersionDetector.Detect(doc, resp.Header.Get("Content-Type"))
 	result.PageTitle = a.titleExtractor.Extract(doc)
 	result.Headings = a.headingExtractor.Extract(doc)
-	result.HasLoginForm = a.loginFormDetector.Detect(doc, normalizedURL, result.PageTitle)
+	result.HasLoginForm = a.loginFormDetector.Detect(doc)
 
-	if !result.HasLoginForm {
-		if renderedDoc, err := a.renderDocument(normalizedURL); err == nil && renderedDoc != nil {
-			result.HasLoginForm = a.loginFormDetector.Detect(renderedDoc, normalizedURL, result.PageTitle)
-		}
-	}
-
+	// Analyze links
 	baseURL := a.getBaseURL(normalizedURL)
 	internal, external, links := a.linkAnalyzer.Analyze(doc, baseURL)
 	result.InternalLinks = internal
 	result.ExternalLinks = external
 	result.Links = links
-	result.InaccessibleLinks = a.linkAnalyzer.CheckAccessibility(result.Links)
+	result.InaccessibleLinks = a.linkAnalyzer.CheckAccessibility(links)
 
 	return result, nil
 }
@@ -105,22 +94,8 @@ func (a *Analyzer) normalizeURL(rawURL string) (string, error) {
 		return "", fmt.Errorf("invalid URL format: %v", err)
 	}
 
-	if parsedURL.Host == "" && parsedURL.Scheme == "" && parsedURL.Path != "" {
-		if !looksLikeHost(parsedURL.Path) {
-			return "", fmt.Errorf("invalid URL format: missing host")
-		}
-		parsedURL, err = url.Parse("http://" + rawURL)
-		if err != nil {
-			return "", fmt.Errorf("invalid URL format: %v", err)
-		}
-	}
-
 	if parsedURL.Scheme == "" {
 		parsedURL.Scheme = "http"
-	}
-
-	if parsedURL.Host == "" {
-		return "", fmt.Errorf("invalid URL format: missing host")
 	}
 
 	return parsedURL.String(), nil
@@ -129,29 +104,4 @@ func (a *Analyzer) normalizeURL(rawURL string) (string, error) {
 func (a *Analyzer) getBaseURL(rawURL string) string {
 	parsedURL, _ := url.Parse(rawURL)
 	return fmt.Sprintf("%s://%s", parsedURL.Scheme, parsedURL.Host)
-}
-
-func looksLikeHost(value string) bool {
-	if value == "localhost" {
-		return true
-	}
-
-	if strings.Contains(value, ".") {
-		return true
-	}
-
-	return false
-}
-
-func (a *Analyzer) renderDocument(targetURL string) (*html.Node, error) {
-	if a.pageRenderer == nil {
-		return nil, nil
-	}
-
-	renderedHTML, err := a.pageRenderer.RenderHTML(targetURL)
-	if err != nil || renderedHTML == "" {
-		return nil, err
-	}
-
-	return html.Parse(strings.NewReader(renderedHTML))
 }
