@@ -1,51 +1,58 @@
-# Build, Deploy, And Assumptions
+# Build, Deployment, Assumptions, And Improvements
 
-## Build
+This document is the short handoff note bundled with the repository.
+
+## Main Build Steps
 
 ```bash
 cd /home/ali/Projects/Go/webpage-analyzer
-go build ./...
+go mod download
 go test ./...
+go build ./...
 ```
 
-## Run Locally
+## Main Run Steps
 
 ```bash
 cd /home/ali/Projects/Go/webpage-analyzer
 go run .
 ```
 
-Default address:
+The application reads runtime configuration from:
 
-```text
-http://localhost:8080
-```
+[`config/app.yaml`](/home/ali/Projects/Go/webpage-analyzer/config/app.yaml)
 
-Custom port:
+The listening port is controlled by:
 
-```bash
-PORT=9090 go run .
-```
+- `server.port`
 
-## Deployment Steps
+## Docker / Deployment Steps
 
-1. Install Go 1.18 or newer.
-2. Copy the repository to the target host.
-3. Build the binary with `go build`.
-4. Ensure outbound HTTP/HTTPS traffic is allowed from the host.
-5. Run the service with `PORT` configured for the environment.
-6. Place the app behind a reverse proxy such as Nginx or Caddy for TLS termination in production.
+1. Build the image from the repository root with `docker build -t webpage-analyzer .`.
+2. Run the development stack with `docker compose up --build`.
+3. Run the production-oriented stack with `docker compose -f docker-compose.prod.yml up --build`.
+4. If Redis caching is required, enable `cache.enabled: true` in [`config/app.yaml`](/home/ali/Projects/Go/webpage-analyzer/config/app.yaml) and ensure Redis is reachable.
+5. If Elasticsearch logging is required, enable the backend in config and start the observability profile from Compose.
+6. Place the service behind Nginx or another reverse proxy for external access.
 
-## Assumptions
+## Decisions And Assumptions
 
-- Input URLs point to publicly reachable pages.
-- The target pages return parseable HTML when analysis succeeds.
-- Some websites may block bots, reject `HEAD` requests, or throttle repeated requests; the application handles part of this with `GET` fallback for link checks, but some false negatives remain possible.
-- Login form detection is heuristic and may not cover JavaScript-rendered authentication flows.
+- The application is implemented as a modular monolith, not microservices, because the scope does not justify distributed complexity.
+- The app accepts public HTTP/HTTPS URLs and normalizes missing schemes when the input still looks like a host.
+- HTML analysis uses raw HTTP responses first, then headless browser rendering when login/auth detection likely needs client-side rendering.
+- Login detection is heuristic-based because websites implement authentication flows differently.
+- Link accessibility uses `HEAD` first and falls back to `GET` when required.
+- Error logging is pluggable and can write to file, SQLite, or Elasticsearch depending on configuration.
+- Analysis results can be cached in Redis to reduce repeat network calls for the same URL.
+- SQLite logging was chosen as the lightweight database-backed option for local or single-node deployments.
+- Chromium/Chrome must be available in environments where rendered-page detection is needed.
 
-## Possible Improvements
+## Suggestions For Improvement
 
-- Containerize the app with a small runtime image.
-- Add health checks and readiness endpoints.
-- Add request timeouts, concurrency controls, and circuit breaking around outbound requests.
-- Persist historical analysis results.
+- Add background workers for link accessibility checks to reduce response time on large pages.
+- Add request-scoped structured logs and correlation IDs.
+- Add an admin page or metrics endpoint for cache hit rate, analysis timing, and error rates.
+- Add richer validation and SSRF protection around outbound URL fetching.
+- Add persistence for historical analysis results and re-analysis comparisons.
+- Add stronger integration tests for Docker, Compose, Redis, and Elasticsearch-backed deployments.
+- Add configuration profiles for local, staging, and production instead of a single shared YAML file.
