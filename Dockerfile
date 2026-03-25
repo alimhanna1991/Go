@@ -1,5 +1,5 @@
 # Production Dockerfile for the config-driven app in /webpage-analyzer
-FROM golang:1.21-bookworm AS builder
+FROM docker.io/library/golang:1.21-bookworm AS builder
 
 WORKDIR /src/webpage-analyzer
 
@@ -11,7 +11,7 @@ COPY webpage-analyzer/ ./
 RUN go test ./...
 RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -o /out/webpage-analyzer ./main.go
 
-FROM debian:bookworm-slim
+FROM docker.io/library/debian:bookworm-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \

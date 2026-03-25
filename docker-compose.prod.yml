@@ -41,7 +41,7 @@ services:
       start_period: 10s
 
   redis:
-    image: redis:7-alpine
+    image: docker.io/library/redis:7-alpine
     container_name: webpage-analyzer-redis-prod
     command: ["redis-server", "--appendonly", "yes"]
     volumes:
@@ -80,7 +80,7 @@ services:
 
   # Optional: Nginx reverse proxy for production
   nginx:
-    image: nginx:alpine
+    image: docker.io/library/nginx:alpine
     container_name: webpage-analyzer-nginx
     ports:
       - "80:80"

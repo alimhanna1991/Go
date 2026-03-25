@@ -47,5 +47,4 @@ DEPLOYMENT.md
 docs/
 
 # Build artifacts
-webpage-analyzer
 coverage.*
