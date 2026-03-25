@@ -1,0 +1,50 @@
+pipeline {
+    agent any
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+        
+        stage('Setup') {
+            steps {
+                sh '''
+                    go version
+                    go mod download
+                '''
+            }
+        }
+        
+        stage('Test') {
+            steps {
+                sh 'go test -v ./...'
+            }
+        }
+        
+        stage('Build') {
+            steps {
+                sh 'go build -o webpage-analyzer ./main.go'
+            }
+        }
+        
+        stage('Docker Build') {
+            steps {
+                sh 'docker build -t webpage-analyzer:test -f Dockerfile .'
+            }
+        }
+    }
+    
+    post {
+        always {
+            cleanWs()
+        }
+        success {
+            echo '✅ Test pipeline completed successfully!'
+        }
+        failure {
+            echo '❌ Test pipeline failed!'
+        }
+    }
+}

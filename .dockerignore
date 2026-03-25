@@ -1,0 +1,53 @@
+# Git
+.git/
+.gitignore
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+vendor/
+tmp/
+*.mod
+*.sum
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# CI/CD
+Jenkinsfile*
+.jenkins/
+
+# Logs
+logs/
+*.log
+
+# Test files
+test/
+*_test.go
+
+# Documentation
+README.md
+DEPLOYMENT.md
+docs/
+
+# Build artifacts
+webpage-analyzer
+coverage.*
