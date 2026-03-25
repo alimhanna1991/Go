@@ -42,8 +42,11 @@ func (r *ChromeRenderer) RenderHTML(url string) (string, error) {
 		r.commandPath,
 		"--headless",
 		"--disable-gpu",
+		"--no-sandbox",
 		"--no-first-run",
 		"--disable-dev-shm-usage",
+		"--window-size=1440,2200",
+		"--virtual-time-budget=12000",
 		"--dump-dom",
 		url,
 	)

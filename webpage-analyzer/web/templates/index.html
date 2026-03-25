@@ -8,15 +8,54 @@
 </head>
 <body>
     <main class="page-shell">
+        <div class="top-strip">
+            <span>Analyze public webpages with a calmer, commerce-inspired interface.</span>
+            <span class="top-strip-note">HTML structure, links, and auth detection in one report.</span>
+        </div>
+
+        <header class="site-header">
+            <div>
+                <p class="brand-kicker">Webpage Analyzer</p>
+                <h1 class="brand-mark">Find the structure behind any page.</h1>
+            </div>
+            <nav class="header-nav" aria-label="Highlights">
+                <span>HTML</span>
+                <span>Links</span>
+                <span>Headings</span>
+                <span>Auth</span>
+            </nav>
+        </header>
+
         <section class="hero">
-            <p class="eyebrow">Go Web Analysis</p>
-            <h1>Inspect any public webpage in one pass.</h1>
-            <p class="lead">HTML version, title, heading distribution, link health, and login-form detection in a single server-rendered report.</p>
+            <div class="hero-copy">
+                <p class="eyebrow">Inspired by modern furniture-commerce layouts</p>
+                <h2>Warm surfaces, clean hierarchy, and clear results.</h2>
+                <p class="lead">The interface now leans into a home24-style direction: light retail-inspired framing, soft neutrals, compact pills, and product-card-like result blocks.</p>
+            </div>
+            <aside class="hero-aside">
+                <div class="hero-stat">
+                    <span>Checks</span>
+                    <strong>6 core signals</strong>
+                </div>
+                <div class="hero-stat">
+                    <span>Rendering</span>
+                    <strong>Raw HTML + JS fallback</strong>
+                </div>
+            </aside>
         </section>
 
         <section class="panel">
             <form method="POST" action="/analyze" class="analyzer-form">
-                <label for="url">Target URL</label>
+                <div class="form-heading">
+                    <div>
+                        <p class="section-kicker">Start Analysis</p>
+                        <label for="url">Target URL</label>
+                    </div>
+                    <div class="form-badges">
+                        <span>Public pages</span>
+                        <span>Rendered auth detection</span>
+                    </div>
+                </div>
                 <div class="form-row">
                     <input type="url" id="url" name="url" placeholder="https://example.com" value="{{.FormURL}}" required>
                     <button type="submit" class="btn">Analyze</button>
@@ -37,7 +76,10 @@
             {{if not .Error}}
             <section class="results">
                 <div class="results-header">
-                    <h2>Analysis Report</h2>
+                    <div>
+                        <p class="section-kicker">Report</p>
+                        <h2>Analysis Summary</h2>
+                    </div>
                     <a href="{{.Result.URL}}" target="_blank" rel="noreferrer">{{.Result.URL}}</a>
                 </div>
 

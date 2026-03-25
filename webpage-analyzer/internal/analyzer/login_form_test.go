@@ -80,3 +80,24 @@ func TestLoginFormDetector_DetectAuthPageHeuristics(t *testing.T) {
 		t.Fatal("expected auth page heuristics to detect login")
 	}
 }
+
+func TestLoginFormDetector_DetectEmailFirstAuthFlow(t *testing.T) {
+	detector := NewLoginFormDetector()
+	doc, err := html.Parse(strings.NewReader(`
+		<html><body>
+			<div class="auth-container">
+				<h1>Log In or Register</h1>
+				<label for="email">Email</label>
+				<input type="email" id="email" name="email">
+				<button type="submit">Continue</button>
+			</div>
+		</body></html>
+	`))
+	if err != nil {
+		t.Fatalf("failed to parse html: %v", err)
+	}
+
+	if !detector.Detect(doc, "https://spring.academy/auth", "Log In or Register - Spring Academy") {
+		t.Fatal("expected email-first auth flow to be detected")
+	}
+}
