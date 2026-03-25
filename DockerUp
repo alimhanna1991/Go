@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+CONTAINER_NAME="${CONTAINER_NAME:-webpage-analyzer-app}"
+IMAGE="${IMAGE:-localhost/webpage-analyzer:latest}"
+PORT="${PORT:-8080}"
+
+if ! command -v docker >/dev/null 2>&1; then
+    echo "docker command not found"
+    exit 1
+fi
+
+if docker ps -a --format '{{.Names}}' | grep -Fxq "${CONTAINER_NAME}"; then
+    echo "Removing existing container: ${CONTAINER_NAME}"
+    docker rm -f "${CONTAINER_NAME}" >/dev/null
+fi
+
+echo "Starting ${CONTAINER_NAME} from ${IMAGE} on port ${PORT}"
+docker run -d \
+    --name "${CONTAINER_NAME}" \
+    -p "${PORT}:8080" \
+    "${IMAGE}"
+
+echo "Container started."
