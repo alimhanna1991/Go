@@ -56,3 +56,9 @@ The listening port is controlled by:
 - Add persistence for historical analysis results and re-analysis comparisons.
 - Add stronger integration tests for Docker, Compose, Redis, and Elasticsearch-backed deployments.
 - Add configuration profiles for local, staging, and production instead of a single shared YAML file.
+- Add URL allow/deny rules, private-network blocking, and stricter outbound request validation to harden SSRF protection.
+- Run link accessibility checks concurrently with bounded worker pools to reduce latency on pages with many links.
+- Improve login detection for multi-step authentication flows, SSO redirects, iframes, and other client-rendered auth patterns.
+- Add retry policies and circuit breaking for outbound HTTP, Redis, and Elasticsearch operations.
+- Expose a JSON API alongside the server-rendered HTML interface.
+- Add cache invalidation controls and freshness metadata so users can understand when cached results were produced.
