@@ -28,6 +28,26 @@ func NewChromeRenderer() *ChromeRenderer {
 	}
 }
 
+func NewChromeRendererWithConfig(commandPath string, timeout time.Duration) *ChromeRenderer {
+	if commandPath == "" {
+		commandPath = "google-chrome"
+	}
+
+	resolvedPath, err := exec.LookPath(commandPath)
+	if err != nil {
+		return nil
+	}
+
+	if timeout <= 0 {
+		timeout = 15 * time.Second
+	}
+
+	return &ChromeRenderer{
+		commandPath: resolvedPath,
+		timeout:     timeout,
+	}
+}
+
 // RenderHTML returns the post-JavaScript DOM for a page.
 func (r *ChromeRenderer) RenderHTML(url string) (string, error) {
 	if r == nil || r.commandPath == "" {

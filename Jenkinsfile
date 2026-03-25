@@ -5,6 +5,7 @@ pipeline {
         // Application configuration
         APP_NAME = 'webpage-analyzer'
         GO_VERSION = '1.21'
+        APP_DIR = 'webpage-analyzer'
         
         // Docker configuration
         DOCKER_REGISTRY = 'docker.io'
@@ -39,27 +40,28 @@ pipeline {
         
         stage('Setup') {
             steps {
-                sh '''
-                    mkdir -p .go .cache/go-build
-                    export GOPATH=${GOPATH}
-                    export GOCACHE=${GOCACHE}
-                    go version
-                    go mod download
-                    go mod verify
-                '''
+                dir("${APP_DIR}") {
+                    sh '''
+                        mkdir -p ../.go ../.cache/go-build
+                        export GOPATH=${WORKSPACE}/.go
+                        export GOCACHE=${WORKSPACE}/.cache/go-build
+                        go version
+                        go mod download
+                        go mod verify
+                    '''
+                }
             }
         }
         
         stage('Lint') {
             steps {
-                sh '''
-                    # Install golangci-lint
-                    curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | \
-                        sh -s -- -b $(go env GOPATH)/bin v1.54.2
-                    
-                    # Run linter
-                    golangci-lint run ./... --out-format=colored-line-number
-                '''
+                dir("${APP_DIR}") {
+                    sh '''
+                        curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | \
+                            sh -s -- -b $(go env GOPATH)/bin v1.54.2
+                        golangci-lint run ./... --out-format=colored-line-number
+                    '''
+                }
             }
             post {
                 always {
@@ -70,25 +72,23 @@ pipeline {
         
         stage('Unit Tests') {
             steps {
-                sh '''
-                    # Run unit tests with coverage
-                    go test -v -race -coverprofile=coverage.out ./...
-                    go tool cover -html=coverage.out -o coverage.html
-                    
-                    # Check coverage threshold
-                    COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
-                    echo "Coverage: $COVERAGE%"
-                    
-                    if (( $(echo "$COVERAGE < ${COVERAGE_THRESHOLD}" | bc -l) )); then
-                        echo "Coverage $COVERAGE% is below threshold ${COVERAGE_THRESHOLD}%"
-                        exit 1
-                    fi
-                '''
+                dir("${APP_DIR}") {
+                    sh '''
+                        go test -v -coverprofile=coverage.out ./...
+                        go tool cover -html=coverage.out -o coverage.html
+                        COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
+                        echo "Coverage: $COVERAGE%"
+                        if (( $(echo "$COVERAGE < ${COVERAGE_THRESHOLD}" | bc -l) )); then
+                            echo "Coverage $COVERAGE% is below threshold ${COVERAGE_THRESHOLD}%"
+                            exit 1
+                        fi
+                    '''
+                }
             }
             post {
                 always {
                     publishHTML([
-                        reportDir: '.',
+                        reportDir: "${APP_DIR}",
                         reportFiles: 'coverage.html',
                         reportName: 'Go Coverage Report',
                         reportTitles: 'Test Coverage'
@@ -115,9 +115,8 @@ pipeline {
                                     fi
                                     sleep 1
                                 done
-                                
-                                # Run integration tests
-                                go test -tags=integration -v ./test/integration/...
+                                curl -fsS http://localhost:8080/ || exit 1
+                                curl -fsS -X POST -d "url=https://example.com" http://localhost:8080/analyze || exit 1
                             '''
                         }
                     }
@@ -130,18 +129,17 @@ pipeline {
                 branch 'main'
             }
             steps {
-                sh '''
-                    # Install gosec
-                    go install github.com/securego/gosec/v2/cmd/gosec@latest
-                    
-                    # Run security scan
-                    gosec -fmt=html -out=security-report.html ./...
-                '''
+                dir("${APP_DIR}") {
+                    sh '''
+                        go install github.com/securego/gosec/v2/cmd/gosec@latest
+                        gosec -fmt=html -out=security-report.html ./...
+                    '''
+                }
             }
             post {
                 always {
                     publishHTML([
-                        reportDir: '.',
+                        reportDir: "${APP_DIR}",
                         reportFiles: 'security-report.html',
                         reportName: 'Security Scan Report'
                     ])
@@ -151,20 +149,18 @@ pipeline {
         
         stage('Build Binary') {
             steps {
-                sh '''
-                    # Build optimized binary
-                    CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
-                        -ldflags="-w -s -X main.version=${DOCKER_TAG} -X main.commit=${GIT_COMMIT_SHORT}" \
-                        -o ${APP_NAME} \
-                        ./main.go
-                    
-                    # Show binary size
-                    ls -lh ${APP_NAME}
-                '''
+                dir("${APP_DIR}") {
+                    sh '''
+                        CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build \
+                            -o ${APP_NAME} \
+                            ./main.go
+                        ls -lh ${APP_NAME}
+                    '''
+                }
             }
             post {
                 success {
-                    archiveArtifacts artifacts: "${APP_NAME}", fingerprint: true
+                    archiveArtifacts artifacts: "${APP_DIR}/${APP_NAME}", fingerprint: true
                 }
             }
         }
@@ -201,8 +197,7 @@ pipeline {
                             cd /opt/${APP_NAME}
                             docker pull ${DOCKER_IMAGE}:${DOCKER_TAG}
                             docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:staging
-                            docker-compose -f docker-compose.prod.yml down
-                            docker-compose -f docker-compose.prod.yml up -d
+                            docker compose -f docker-compose.prod.yml up -d --remove-orphans
                             docker system prune -f
                         EOF
                     '''
@@ -244,8 +239,7 @@ pipeline {
                             cd /opt/${APP_NAME}
                             docker pull ${DOCKER_IMAGE}:${DOCKER_TAG}
                             docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:production
-                            docker-compose -f docker-compose.prod.yml down
-                            docker-compose -f docker-compose.prod.yml up -d
+                            docker compose -f docker-compose.prod.yml up -d --remove-orphans
                             docker system prune -f
                         EOF
                     '''

@@ -9,14 +9,15 @@ services:
         VERSION: ${VERSION:-latest}
     image: ${REGISTRY:-docker.io}/webpage-analyzer:${TAG:-latest}
     container_name: webpage-analyzer-prod
+    working_dir: /app/webpage-analyzer
     ports:
       - "8080:8080"
-    environment:
-      - PORT=8080
-      - TIMEOUT=${TIMEOUT:-30}
-      - MAX_REDIRECTS=${MAX_REDIRECTS:-10}
-      - GO_ENV=production
     restart: always
+    depends_on:
+      - redis
+    volumes:
+      - ./webpage-analyzer/config/app.yaml:/app/webpage-analyzer/config/app.yaml:ro
+      - webpage-analyzer-prod-logs:/app/webpage-analyzer/logs
     networks:
       - prod-network
     logging:
@@ -38,6 +39,44 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+    container_name: webpage-analyzer-redis-prod
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-prod-data:/data
+    networks:
+      - prod-network
+    restart: always
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.4
+    container_name: webpage-analyzer-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    networks:
+      - prod-network
+    restart: unless-stopped
+    profiles: ["observability"]
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.13.4
+    container_name: webpage-analyzer-kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
+    ports:
+      - "5601:5601"
+    networks:
+      - prod-network
+    restart: unless-stopped
+    profiles: ["observability"]
 
   # Optional: Nginx reverse proxy for production
   nginx:
@@ -64,3 +103,7 @@ networks:
   prod-network:
     driver: bridge
 
+volumes:
+  webpage-analyzer-prod-logs:
+  redis-prod-data:
+  elasticsearch-data:

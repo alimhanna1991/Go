@@ -1,0 +1,35 @@
+server:
+  port: "8080"
+
+http_client:
+  timeout_seconds: 10
+  max_redirects: 10
+  insecure_skip_verify: false
+
+browser:
+  enabled: true
+  command: "google-chrome"
+  timeout_seconds: 15
+
+logging:
+  enabled: true
+  backends:
+    - "file"
+  file:
+    path: "logs/errors.jsonl"
+  database:
+    dsn: "file:logs/errors.db?_pragma=busy_timeout(5000)"
+  elasticsearch:
+    url: "http://localhost:9200"
+    index: "webpage-analyzer-errors"
+
+cache:
+  enabled: false
+  ttl_seconds: 300
+  redis:
+    addr: "localhost:6379"
+    password: ""
+    db: 0
+
+template_paths:
+  index: "web/templates/index.html"

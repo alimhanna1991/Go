@@ -12,8 +12,6 @@
 *.out
 vendor/
 tmp/
-*.mod
-*.sum
 
 # IDE
 .vscode/
@@ -27,7 +25,6 @@ tmp/
 Thumbs.db
 
 # Docker
-Dockerfile*
 docker-compose*
 .dockerignore
 
@@ -38,6 +35,7 @@ Jenkinsfile*
 # Logs
 logs/
 *.log
+webpage-analyzer/logs/
 
 # Test files
 test/

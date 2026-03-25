@@ -1,63 +1,43 @@
-# Multi-stage Dockerfile for production
-# Stage 1: Build stage
-FROM golang:1.21-alpine AS builder
+# Production Dockerfile for the config-driven app in /webpage-analyzer
+FROM golang:1.21-bookworm AS builder
 
-# Install build dependencies
-RUN apk add --no-cache git ca-certificates tzdata
+WORKDIR /src/webpage-analyzer
 
-# Set working directory
-WORKDIR /build
-
-# Copy go mod files first for better caching
-COPY go.mod go.sum ./
+COPY webpage-analyzer/go.mod webpage-analyzer/go.sum ./
 RUN go mod download
 
-# Copy source code
-COPY . .
+COPY webpage-analyzer/ ./
 
-# Run tests
-RUN go test -v ./...
+RUN go test ./...
+RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -o /out/webpage-analyzer ./main.go
 
-# Build the application with optimizations
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
-    -ldflags="-w -s -X main.version=${VERSION:-dev}" \
-    -o /build/webpage-analyzer \
-    ./main.go
+FROM debian:bookworm-slim
 
-# Stage 2: Runtime stage
-FROM alpine:latest
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    curl \
+    chromium \
+    tzdata \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install runtime dependencies
-RUN apk add --no-cache ca-certificates tzdata curl
+RUN ln -s /usr/bin/chromium /usr/local/bin/google-chrome
 
-# Create non-root user for security
-RUN addgroup -g 1001 -S appgroup && \
-    adduser -u 1001 -S appuser -G appgroup
+RUN groupadd --gid 1001 appgroup && \
+    useradd --uid 1001 --gid appgroup --create-home --shell /usr/sbin/nologin appuser
 
-# Set working directory
-WORKDIR /app
+WORKDIR /app/webpage-analyzer
 
-# Copy binary from builder
-COPY --from=builder /build/webpage-analyzer .
+COPY --from=builder /out/webpage-analyzer ./webpage-analyzer
+COPY --from=builder /src/webpage-analyzer/web ./web
+COPY --from=builder /src/webpage-analyzer/config ./config
 
-# Copy web assets
-COPY --from=builder /build/web/templates ./web/templates
-COPY --from=builder /build/web/static ./web/static
+RUN mkdir -p logs && chown -R appuser:appgroup /app
 
-# Change ownership to non-root user
-RUN chown -R appuser:appgroup /app
-
-# Switch to non-root user
 USER appuser
 
-# Expose port
 EXPOSE 8080
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8080/ || exit 1
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD curl -fsS http://localhost:8080/ || exit 1
 
-# Run the application
 CMD ["./webpage-analyzer"]
-
-

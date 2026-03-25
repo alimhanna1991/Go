@@ -37,6 +37,14 @@ func NewDefaultHTTPClient() *DefaultHTTPClient {
 	return NewDefaultHTTPClientWithConfig(config)
 }
 
+func NewClientConfig(timeout time.Duration, maxRedirects int, insecureSkipVerify bool) *ClientConfig {
+	return &ClientConfig{
+		Timeout:            timeout,
+		MaxRedirects:       maxRedirects,
+		InsecureSkipVerify: insecureSkipVerify,
+	}
+}
+
 // NewDefaultHTTPClientWithConfig creates a new HTTP client with custom config
 func NewDefaultHTTPClientWithConfig(config *ClientConfig) *DefaultHTTPClient {
 	return &DefaultHTTPClient{

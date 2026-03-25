@@ -16,8 +16,8 @@ type Handler struct {
 }
 
 // NewHandler creates a new handler with dependencies
-func NewHandler(analyzerService services.AnalyzerService) (*Handler, error) {
-	tmpl, err := template.ParseFiles("web/templates/index.html")
+func NewHandler(analyzerService services.AnalyzerService, templatePath string) (*Handler, error) {
+	tmpl, err := template.ParseFiles(templatePath)
 	if err != nil {
 		return nil, err
 	}

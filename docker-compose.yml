@@ -6,17 +6,16 @@ services:
       context: .
       dockerfile: Dockerfile.dev
     container_name: webpage-analyzer-dev
+    working_dir: /app/webpage-analyzer
     ports:
       - "8080:8080"
-    environment:
-      - PORT=8080
-      - TIMEOUT=10
-      - MAX_REDIRECTS=10
-      - GO_ENV=development
     volumes:
-      - .:/app
-      - /app/tmp
+      - ./webpage-analyzer:/app/webpage-analyzer
+      - ./.air.toml:/app/.air.toml:ro
+      - webpage-analyzer-dev-logs:/app/webpage-analyzer/logs
     restart: unless-stopped
+    depends_on:
+      - redis
     networks:
       - dev-network
     logging:
@@ -25,7 +24,22 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  redis:
+    image: redis:7-alpine
+    container_name: webpage-analyzer-redis-dev
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-dev-data:/data
+    networks:
+      - dev-network
+    restart: unless-stopped
+
 networks:
   dev-network:
     driver: bridge
 
+volumes:
+  webpage-analyzer-dev-logs:
+  redis-dev-data:
