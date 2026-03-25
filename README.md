@@ -2,7 +2,7 @@
 
 This repository contains a Go web application for analyzing webpages and the deployment files used to run it locally or in containerized environments.
 
-The application source lives in [`/Go/webpage-analyzer`](/Go/webpage-analyzer).
+The application source lives in [`/webpage-analyzer`](/webpage-analyzer).
 
 ## What It Does
 
@@ -16,23 +16,23 @@ The application source lives in [`/Go/webpage-analyzer`](/Go/webpage-analyzer).
 
 ## Repository Layout
 
-- [`/Go/webpage-analyzer`](/Go/webpage-analyzer): Go application source
-- [`/Go/Dockerfile`](/Go/Dockerfile): production image
-- [`/Go/Dockerfile.dev`](/Go/Dockerfile.dev): development image
-- [`/Go/docker-compose.yml`](/Go/docker-compose.yml): local development stack
-- [`/Go/docker-compose.prod.yml`](/Go/docker-compose.prod.yml): production-oriented stack with optional observability services
-- [`/Go/Jenkinsfile`](/Go/Jenkinsfile): CI/CD pipeline
-- [`/Go/nginx.conf`](/Go/nginx.conf): reverse proxy config
+- [`/webpage-analyzer`](/webpage-analyzer): Go application source
+- [`/Dockerfile`](/Dockerfile): production image
+- [`/Dockerfile.dev`](/Dockerfile.dev): development image
+- [`/docker-compose.yml`](/docker-compose.yml): local development stack
+- [`/docker-compose.prod.yml`](/docker-compose.prod.yml): production-oriented stack with optional observability services
+- [`/Jenkinsfile`](/Jenkinsfile): CI/CD pipeline
+- [`/nginx.conf`](/nginx.conf): reverse proxy config
 
 ## Local Run
 
 ```bash
-cd /Go/webpage-analyzer
+cd /webpage-analyzer
 go mod download
 go run .
 ```
 
-The app reads runtime settings from [`/Go/webpage-analyzer/config/app.yaml`](/Go/webpage-analyzer/config/app.yaml).
+The app reads runtime settings from [`/webpage-analyzer/config/app.yaml`](/webpage-analyzer/config/app.yaml).
 
 Default URL:
 
@@ -42,7 +42,7 @@ http://localhost:8080
 
 ## Configuration
 
-Main runtime configuration is in [`/Go/webpage-analyzer/config/app.yaml`](/Go/webpage-analyzer/config/app.yaml).
+Main runtime configuration is in [`/webpage-analyzer/config/app.yaml`](/webpage-analyzer/config/app.yaml).
 
 Supported configuration areas:
 
@@ -119,7 +119,7 @@ docker compose -f docker-compose.prod.yml --profile observability up --build
 Run tests from the application directory:
 
 ```bash
-cd /Go/webpage-analyzer
+cd /webpage-analyzer
 go test ./...
 ```
 
@@ -134,7 +134,7 @@ The Jenkins pipeline:
 - builds the Docker image
 - runs deployment steps for staging and production
 
-The pipeline is defined in [`/Go/Jenkinsfile`](/Go/Jenkinsfile).
+The pipeline is defined in [`/Jenkinsfile`](/Jenkinsfile).
 
 ## Notes
 
