@@ -5,7 +5,7 @@ This document is the short handoff note bundled with the repository.
 ## Main Build Steps
 
 ```bash
-cd /home/ali/Projects/Go/webpage-analyzer
+cd /Go/webpage-analyzer
 go mod download
 go test ./...
 go build ./...
@@ -14,7 +14,7 @@ go build ./...
 ## Main Run Steps
 
 ```bash
-cd /home/ali/Projects/Go/webpage-analyzer
+cd /Go/webpage-analyzer
 go run .
 ```
 
