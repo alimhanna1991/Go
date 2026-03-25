@@ -20,7 +20,7 @@ go run .
 
 The application reads runtime configuration from:
 
-[`config/app.yaml`](/home/ali/Projects/Go/webpage-analyzer/config/app.yaml)
+[`config/app.yaml`](/Go/webpage-analyzer/config/app.yaml)
 
 The listening port is controlled by:
 
@@ -31,7 +31,7 @@ The listening port is controlled by:
 1. Build the image from the repository root with `docker build -t webpage-analyzer .`.
 2. Run the development stack with `docker compose up --build`.
 3. Run the production-oriented stack with `docker compose -f docker-compose.prod.yml up --build`.
-4. If Redis caching is required, enable `cache.enabled: true` in [`config/app.yaml`](/home/ali/Projects/Go/webpage-analyzer/config/app.yaml) and ensure Redis is reachable.
+4. If Redis caching is required, enable `cache.enabled: true` in [`config/app.yaml`](/Go/webpage-analyzer/config/app.yaml) and ensure Redis is reachable.
 5. If Elasticsearch logging is required, enable the backend in config and start the observability profile from Compose.
 6. Place the service behind Nginx or another reverse proxy for external access.
 
