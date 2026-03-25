@@ -96,6 +96,32 @@ Build the production image:
 docker build -t webpage-analyzer .
 ```
 
+Start the built container with the helper script:
+
+```bash
+cd /Go
+./DockerUp
+```
+
+Stop and remove it with:
+
+```bash
+cd /Go
+./DockerDown
+```
+
+Default helper-script values:
+
+- Container name: `webpage-analyzer-app`
+- Image: `localhost/webpage-analyzer:latest`
+- Host port: `8080`
+
+You can override them when starting the container:
+
+```bash
+PORT=9090 IMAGE=localhost/webpage-analyzer:latest ./DockerUp
+```
+
 Run the development stack:
 
 ```bash
