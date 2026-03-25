@@ -4,6 +4,8 @@ This repository contains a Go web application for analyzing webpages and the dep
 
 The application source lives in [`/webpage-analyzer`](/webpage-analyzer).
 
+For build and deployment notes, assumptions, and application improvement suggestions, see [`/DEPLOYMENT.md`](/DEPLOYMENT.md).
+
 ## What It Does
 
 - Detects the HTML version
