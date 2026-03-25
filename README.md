@@ -19,6 +19,9 @@ For build and deployment notes, assumptions, and application improvement suggest
 ## Repository Layout
 
 - [`/webpage-analyzer`](/webpage-analyzer): Go application source
+- [`/webpage-analyzer/main.go`](/webpage-analyzer/main.go): application entrypoint
+- [`/webpage-analyzer/internal`](/webpage-analyzer/internal): core application packages
+- [`/webpage-analyzer/web`](/webpage-analyzer/web): templates and static assets
 - [`/Dockerfile`](/Dockerfile): production image
 - [`/Dockerfile.dev`](/Dockerfile.dev): development image
 - [`/docker-compose.yml`](/docker-compose.yml): local development stack
@@ -101,14 +104,14 @@ docker build -t webpage-analyzer .
 Start the built container with the helper script:
 
 ```bash
-cd /Go
+cd /home/ali/Projects/Go
 ./DockerUp
 ```
 
 Stop and remove it with:
 
 ```bash
-cd /Go
+cd /home/ali/Projects/Go
 ./DockerDown
 ```
 
@@ -147,9 +150,21 @@ docker compose -f docker-compose.prod.yml --profile observability up --build
 Run tests from the application directory:
 
 ```bash
-cd /webpage-analyzer
+cd /home/ali/Projects/Go/webpage-analyzer
 go test ./...
 ```
+
+## Architecture
+
+- `main.go`: config loading and dependency wiring
+- `internal/analyzer`: HTML, title, heading, link, and login/auth analysis
+- `internal/browser`: rendered-page fallback support through headless Chrome/Chromium
+- `internal/cache`: Redis-backed analysis result caching
+- `internal/config`: YAML-based runtime configuration
+- `internal/handlers`: HTTP handlers and template view model
+- `internal/http`: outbound HTTP client abstraction and implementation
+- `internal/logging`: file, SQLite, and Elasticsearch error logging backends
+- `internal/services`: orchestration layer for analysis, cache, and logging
 
 ## CI/CD
 
