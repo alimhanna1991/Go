@@ -4,7 +4,7 @@ This repository contains the deployment handoff note for the `webpage-analyzer` 
 
 Primary application path:
 
-- [`/Go/webpage-analyzer`](/Go/webpage-analyzer)
+- [`/webpage-analyzer`](/webpage-analyzer)
 
 ## Main Build Steps
 
@@ -24,7 +24,7 @@ go run .
 
 The application reads runtime configuration from:
 
-- [`/Go/webpage-analyzer/config/app.yaml`](/Go/webpage-analyzer/config/app.yaml)
+- [`/webpage-analyzer/config/app.yaml`](/webpage-analyzer/config/app.yaml)
 
 The listening port is controlled by:
 
@@ -33,11 +33,19 @@ The listening port is controlled by:
 ## Docker / Deployment Steps
 
 1. Build the image from the repository root with `docker build -t webpage-analyzer .`.
-2. Run the development stack with `docker compose up --build`.
-3. Run the production-oriented stack with `docker compose -f docker-compose.prod.yml up --build`.
-4. If Redis caching is required, enable `cache.enabled: true` in the app config and ensure Redis is reachable.
-5. If Elasticsearch logging is required, enable the backend in config and start the observability profile from Compose.
-6. Put the application behind Nginx or another reverse proxy for external access.
+2. Start the built container from the repository root with `./DockerUp`.
+3. Stop and remove the container with `./DockerDown`.
+4. Default helper-script values are:
+   - container name: `webpage-analyzer-app`
+   - image: `localhost/webpage-analyzer:latest`
+   - host port: `8080`
+5. You can override them when starting:
+   - `PORT=9090 IMAGE=localhost/webpage-analyzer:latest ./DockerUp`
+6. Run the development stack with `docker compose up --build`.
+7. Run the production-oriented stack with `docker compose -f docker-compose.prod.yml up --build`.
+8. If Redis caching is required, enable `cache.enabled: true` in the app config and ensure Redis is reachable.
+9. If Elasticsearch logging is required, enable the backend in config and start the observability profile from Compose.
+10. Put the application behind Nginx or another reverse proxy for external access.
 
 ## Decisions And Assumptions
 

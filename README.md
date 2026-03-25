@@ -4,7 +4,7 @@ This repository contains a Go web application for analyzing webpages and the dep
 
 The application source lives in [`/webpage-analyzer`](/webpage-analyzer).
 
-For build and deployment notes, assumptions, and application improvement suggestions, see [`/DEPLOYMENT.md`](/DEPLOYMENT.md).
+For build, Docker usage, deployment notes, assumptions, and application improvement suggestions, see [`/DEPLOYMENT.md`](/DEPLOYMENT.md).
 
 ## What It Does
 
@@ -95,55 +95,7 @@ and provide valid Redis connection settings in the same config file.
 
 ## Docker
 
-Build the production image:
-
-```bash
-docker build -t webpage-analyzer .
-```
-
-Start the built container with the helper script:
-
-```bash
-cd /home/ali/Projects/Go
-./DockerUp
-```
-
-Stop and remove it with:
-
-```bash
-cd /home/ali/Projects/Go
-./DockerDown
-```
-
-Default helper-script values:
-
-- Container name: `webpage-analyzer-app`
-- Image: `localhost/webpage-analyzer:latest`
-- Host port: `8080`
-
-You can override them when starting the container:
-
-```bash
-PORT=9090 IMAGE=localhost/webpage-analyzer:latest ./DockerUp
-```
-
-Run the development stack:
-
-```bash
-docker compose up --build
-```
-
-Run the production-oriented stack:
-
-```bash
-docker compose -f docker-compose.prod.yml up --build
-```
-
-Run the production stack with Elasticsearch and Kibana:
-
-```bash
-docker compose -f docker-compose.prod.yml --profile observability up --build
-```
+Docker build, `DockerUp` / `DockerDown`, Compose usage, and deployment details are documented in [`/DEPLOYMENT.md`](/DEPLOYMENT.md).
 
 ## Testing
 
