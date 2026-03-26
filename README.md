@@ -32,9 +32,8 @@ For build, Docker usage, deployment notes, assumptions, and application improvem
 ## Local Run
 
 ```bash
-cd /webpage-analyzer
+cd /home/ali/Projects/Go/webpage-analyzer
 go mod download
-go run .
 ```
 
 The default web service reads runtime settings from [`/webpage-analyzer/config/app.yaml`](/webpage-analyzer/config/app.yaml).
@@ -42,15 +41,15 @@ The analysis service sample config is [`/webpage-analyzer/config/app.analysis.ya
 
 Run the web service:
 
-```text
-cd /Go/webpage-analyzer
+```bash
+cd /home/ali/Projects/Go/webpage-analyzer
 go run .
 ```
 
 Run the analysis service:
 
-```text
-cd /Go/webpage-analyzer
+```bash
+cd /home/ali/Projects/Go/webpage-analyzer
 APP_CONFIG_PATH=config/app.analysis.yaml go run .
 ```
 
@@ -114,24 +113,25 @@ Docker build, `DockerUp` / `DockerDown`, Compose usage, and deployment details a
 Run tests from the application directory:
 
 ```bash
-cd /Go/webpage-analyzer
+cd /home/ali/Projects/Go/webpage-analyzer
 go test ./...
 ```
 
 ## Architecture
 
 - `main.go`: config loading and service startup
-- `config/app.yaml`: web service config
-- `config/app.analysis.yaml`: analysis service config
-- `internal/api`: analysis API handler and HTTP client between services
-- `internal/analyzer`: HTML, title, heading, link, and login/auth analysis
-- `internal/browser`: rendered-page fallback support through headless Chrome/Chromium
+- `config/app.yaml`: web frontend configuration
+- `config/app.analysis.yaml`: analysis API configuration
+- `internal/app`: service-specific bootstrap and runtime assembly
+- `internal/api`: HTTP contract between the web service and the analysis service
+- `internal/analyzer`: webpage analysis logic and URL policy
+- `internal/browser`: rendered-page fallback through headless Chrome/Chromium
 - `internal/cache`: Redis-backed analysis result caching
 - `internal/config`: YAML-based runtime configuration
-- `internal/handlers`: web frontend HTTP handlers and template view model
+- `internal/handlers`: web frontend handlers and template view models
 - `internal/http`: outbound HTTP client abstraction and implementation
-- `internal/logging`: file, SQLite, and Elasticsearch error logging backends
-- `internal/services`: analysis orchestration, cache, and logging
+- `internal/logging`: file, SQLite, and Elasticsearch logging backends
+- `internal/services`: analysis use-case orchestration, cache, and logging
 
 ## CI/CD
 
