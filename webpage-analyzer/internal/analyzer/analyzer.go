@@ -2,9 +2,7 @@ package analyzer
 
 import (
 	"fmt"
-	"net"
 	"net/http"
-	"net/url"
 	"strings"
 
 	"golang.org/x/net/html"
@@ -43,7 +41,7 @@ func (a *Analyzer) Analyze(targetURL string) (*models.AnalysisResult, error) {
 		Headings: make(map[string]int),
 	}
 
-	normalizedURL, err := a.normalizeURL(targetURL)
+	normalizedURL, err := normalizeURL(targetURL)
 	if err != nil {
 		result.ErrorMessage = err.Error()
 		return result, err
@@ -82,20 +80,9 @@ func (a *Analyzer) Analyze(targetURL string) (*models.AnalysisResult, error) {
 	result.HTMLVersion = a.htmlVersionDetector.Detect(doc, contentType)
 	result.PageTitle = a.titleExtractor.Extract(doc)
 	result.Headings = a.headingExtractor.Extract(doc)
-	result.HasLoginForm = a.loginFormDetector.Detect(doc, normalizedURL, result.PageTitle)
+	a.detectLoginForm(result, doc, normalizedURL)
 
-	if !result.HasLoginForm {
-		if renderedDoc, err := a.renderDocument(normalizedURL); err == nil && renderedDoc != nil {
-			renderedTitle := a.titleExtractor.Extract(renderedDoc)
-			if renderedTitle != "" {
-				result.PageTitle = renderedTitle
-			}
-			result.HasLoginForm = a.loginFormDetector.Detect(renderedDoc, normalizedURL, result.PageTitle)
-		}
-	}
-
-	baseURL := a.getBaseURL(normalizedURL)
-	internal, external, links := a.linkAnalyzer.Analyze(doc, baseURL)
+	internal, external, links := a.linkAnalyzer.Analyze(doc, baseURL(normalizedURL))
 	result.InternalLinks = internal
 	result.ExternalLinks = external
 	result.Links = links
@@ -104,78 +91,22 @@ func (a *Analyzer) Analyze(targetURL string) (*models.AnalysisResult, error) {
 	return result, nil
 }
 
-func (a *Analyzer) normalizeURL(rawURL string) (string, error) {
-	parsedURL, err := url.Parse(rawURL)
-	if err != nil {
-		return "", fmt.Errorf("invalid URL format: %v", err)
+func (a *Analyzer) detectLoginForm(result *models.AnalysisResult, doc *html.Node, targetURL string) {
+	result.HasLoginForm = a.loginFormDetector.Detect(doc, targetURL, result.PageTitle)
+	if result.HasLoginForm {
+		return
 	}
 
-	if parsedURL.Host == "" && parsedURL.Scheme == "" && parsedURL.Path != "" {
-		if !looksLikeHost(parsedURL.Path) {
-			return "", fmt.Errorf("invalid URL format: missing host")
-		}
-		parsedURL, err = url.Parse("http://" + rawURL)
-		if err != nil {
-			return "", fmt.Errorf("invalid URL format: %v", err)
-		}
+	renderedDoc, err := a.renderDocument(targetURL)
+	if err != nil || renderedDoc == nil {
+		return
 	}
 
-	if parsedURL.Scheme == "" {
-		parsedURL.Scheme = "http"
+	renderedTitle := a.titleExtractor.Extract(renderedDoc)
+	if renderedTitle != "" {
+		result.PageTitle = renderedTitle
 	}
-
-	if parsedURL.Scheme != "http" && parsedURL.Scheme != "https" {
-		return "", fmt.Errorf("invalid URL scheme: only http and https are supported")
-	}
-
-	if parsedURL.Host == "" {
-		return "", fmt.Errorf("invalid URL format: missing host")
-	}
-
-	if err := validateTargetHost(parsedURL.Hostname()); err != nil {
-		return "", err
-	}
-
-	return parsedURL.String(), nil
-}
-
-func (a *Analyzer) getBaseURL(rawURL string) string {
-	parsedURL, _ := url.Parse(rawURL)
-	return fmt.Sprintf("%s://%s", parsedURL.Scheme, parsedURL.Host)
-}
-
-func looksLikeHost(value string) bool {
-	if value == "localhost" {
-		return true
-	}
-
-	if strings.Contains(value, ".") {
-		return true
-	}
-
-	return false
-}
-
-func validateTargetHost(host string) error {
-	normalizedHost := strings.TrimSpace(strings.ToLower(host))
-	if normalizedHost == "" {
-		return fmt.Errorf("invalid URL format: missing host")
-	}
-
-	if normalizedHost == "localhost" {
-		return fmt.Errorf("target host is not allowed")
-	}
-
-	ip := net.ParseIP(normalizedHost)
-	if ip == nil {
-		return nil
-	}
-
-	if ip.IsLoopback() || ip.IsPrivate() || ip.IsUnspecified() || ip.IsMulticast() || ip.IsLinkLocalMulticast() || ip.IsLinkLocalUnicast() {
-		return fmt.Errorf("target host is not allowed")
-	}
-
-	return nil
+	result.HasLoginForm = a.loginFormDetector.Detect(renderedDoc, targetURL, result.PageTitle)
 }
 
 func (a *Analyzer) renderDocument(targetURL string) (*html.Node, error) {
