@@ -10,12 +10,18 @@ import (
 
 // Config contains runtime configuration loaded from YAML.
 type Config struct {
+	Service       ServiceConfig       `yaml:"service"`
 	Server        ServerConfig        `yaml:"server"`
 	HTTPClient    HTTPClientConfig    `yaml:"http_client"`
+	AnalysisAPI   AnalysisAPIConfig   `yaml:"analysis_api"`
 	Browser       BrowserConfig       `yaml:"browser"`
 	Logging       LoggingConfig       `yaml:"logging"`
 	Cache         CacheConfig         `yaml:"cache"`
 	TemplatePaths TemplatePathsConfig `yaml:"template_paths"`
+}
+
+type ServiceConfig struct {
+	Role string `yaml:"role"`
 }
 
 type ServerConfig struct {
@@ -26,6 +32,11 @@ type HTTPClientConfig struct {
 	TimeoutSeconds     int  `yaml:"timeout_seconds"`
 	MaxRedirects       int  `yaml:"max_redirects"`
 	InsecureSkipVerify bool `yaml:"insecure_skip_verify"`
+}
+
+type AnalysisAPIConfig struct {
+	BaseURL        string `yaml:"base_url"`
+	TimeoutSeconds int    `yaml:"timeout_seconds"`
 }
 
 type BrowserConfig struct {
@@ -93,6 +104,9 @@ func Load(path string) (*Config, error) {
 // Default returns the baseline runtime configuration.
 func Default() *Config {
 	return &Config{
+		Service: ServiceConfig{
+			Role: "web",
+		},
 		Server: ServerConfig{
 			Port: "8080",
 		},
@@ -100,6 +114,10 @@ func Default() *Config {
 			TimeoutSeconds:     10,
 			MaxRedirects:       10,
 			InsecureSkipVerify: false,
+		},
+		AnalysisAPI: AnalysisAPIConfig{
+			BaseURL:        "http://localhost:8081",
+			TimeoutSeconds: 15,
 		},
 		Browser: BrowserConfig{
 			Enabled:        true,
@@ -136,6 +154,14 @@ func Default() *Config {
 
 // Validate checks required values.
 func (c *Config) Validate() error {
+	if c.Service.Role == "" {
+		return errors.New("service.role is required")
+	}
+
+	if c.Service.Role != "web" && c.Service.Role != "analysis" {
+		return errors.New("service.role must be either web or analysis")
+	}
+
 	if c.Server.Port == "" {
 		return errors.New("server.port is required")
 	}
@@ -146,6 +172,14 @@ func (c *Config) Validate() error {
 
 	if c.HTTPClient.MaxRedirects < 0 {
 		return errors.New("http_client.max_redirects cannot be negative")
+	}
+
+	if c.AnalysisAPI.TimeoutSeconds <= 0 {
+		return errors.New("analysis_api.timeout_seconds must be greater than zero")
+	}
+
+	if c.Service.Role == "web" && c.AnalysisAPI.BaseURL == "" {
+		return errors.New("analysis_api.base_url is required for web service")
 	}
 
 	if c.Browser.TimeoutSeconds <= 0 {
@@ -169,6 +203,10 @@ func (c *Config) HTTPTimeout() time.Duration {
 
 func (c *Config) BrowserTimeout() time.Duration {
 	return time.Duration(c.Browser.TimeoutSeconds) * time.Second
+}
+
+func (c *Config) AnalysisAPITimeout() time.Duration {
+	return time.Duration(c.AnalysisAPI.TimeoutSeconds) * time.Second
 }
 
 func (c *Config) CacheTTL() time.Duration {

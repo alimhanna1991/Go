@@ -18,13 +18,22 @@ cd /Go/webpage-analyzer
 go run .
 ```
 
-The application reads runtime configuration from:
+That starts the web service by default using:
 
 [`config/app.yaml`](/Go/webpage-analyzer/config/app.yaml)
 
-The listening port is controlled by:
+To start the analysis service:
 
+```bash
+cd /Go/webpage-analyzer
+APP_CONFIG_PATH=config/app.analysis.yaml go run .
+```
+
+The service role and listening port are controlled by:
+
+- `service.role`
 - `server.port`
+- `analysis_api.base_url`
 
 ## Docker / Deployment Steps
 
@@ -46,7 +55,7 @@ The listening port is controlled by:
 
 ## Decisions And Assumptions
 
-- The application is implemented as a modular monolith, not microservices, because the scope does not justify distributed complexity.
+- The application is implemented as a small two-service split inside one repository: a web frontend service and an analysis API service.
 - The app accepts public HTTP/HTTPS URLs and normalizes missing schemes when the input still looks like a host.
 - HTML analysis uses raw HTTP responses first, then headless browser rendering when login/auth detection likely needs client-side rendering.
 - Login detection is heuristic-based because websites implement authentication flows differently.
@@ -55,6 +64,7 @@ The listening port is controlled by:
 - Analysis results can be cached in Redis to reduce repeat network calls for the same URL.
 - SQLite logging was chosen as the lightweight database-backed option for local or single-node deployments.
 - Chromium/Chrome must be available in environments where rendered-page detection is needed.
+- The web service calls the analysis service over HTTP through `/api/v1/analyze`.
 
 ## Suggestions For Improvement
 

@@ -1,6 +1,6 @@
 # Webpage Analyzer
 
-This repository contains a Go web application for analyzing webpages and the deployment files used to run it locally or in containerized environments.
+This repository contains a Go application for analyzing webpages, split into a small web frontend service and a separate analysis API service.
 
 The application source lives in [`/webpage-analyzer`](/webpage-analyzer).
 
@@ -37,12 +37,21 @@ go mod download
 go run .
 ```
 
-The app reads runtime settings from [`/webpage-analyzer/config/app.yaml`](/webpage-analyzer/config/app.yaml).
+The default web service reads runtime settings from [`/webpage-analyzer/config/app.yaml`](/webpage-analyzer/config/app.yaml).
+The analysis service sample config is [`/webpage-analyzer/config/app.analysis.yaml`](/webpage-analyzer/config/app.analysis.yaml).
 
-Default URL:
+Run the web service:
 
 ```text
-http://localhost:8080
+cd /home/ali/Projects/Go/webpage-analyzer
+go run .
+```
+
+Run the analysis service:
+
+```text
+cd /home/ali/Projects/Go/webpage-analyzer
+APP_CONFIG_PATH=config/app.analysis.yaml go run .
 ```
 
 ## Configuration
@@ -51,7 +60,10 @@ Main runtime configuration is in [`/webpage-analyzer/config/app.yaml`](/webpage-
 
 Supported configuration areas:
 
+- `service.role`
 - `server.port`
+- `analysis_api.base_url`
+- `analysis_api.timeout_seconds`
 - `http_client.timeout_seconds`
 - `browser.enabled`
 - `browser.command`
@@ -108,15 +120,18 @@ go test ./...
 
 ## Architecture
 
-- `main.go`: config loading and dependency wiring
+- `main.go`: config loading and service startup
+- `config/app.yaml`: web service config
+- `config/app.analysis.yaml`: analysis service config
+- `internal/api`: analysis API handler and HTTP client between services
 - `internal/analyzer`: HTML, title, heading, link, and login/auth analysis
 - `internal/browser`: rendered-page fallback support through headless Chrome/Chromium
 - `internal/cache`: Redis-backed analysis result caching
 - `internal/config`: YAML-based runtime configuration
-- `internal/handlers`: HTTP handlers and template view model
+- `internal/handlers`: web frontend HTTP handlers and template view model
 - `internal/http`: outbound HTTP client abstraction and implementation
 - `internal/logging`: file, SQLite, and Elasticsearch error logging backends
-- `internal/services`: orchestration layer for analysis, cache, and logging
+- `internal/services`: analysis orchestration, cache, and logging
 
 ## CI/CD
 

@@ -6,6 +6,7 @@ import (
 	stdhttp "net/http"
 
 	"webpage-analyzer/internal/analyzer"
+	"webpage-analyzer/internal/api"
 	"webpage-analyzer/internal/browser"
 	"webpage-analyzer/internal/cache"
 	"webpage-analyzer/internal/config"
@@ -24,42 +25,24 @@ type App struct {
 
 // New builds the application from runtime configuration.
 func New(cfg *config.Config) (*App, error) {
-	errorLogger, err := buildLogger(cfg)
-	if err != nil {
-		return nil, fmt.Errorf("initialize logger: %w", err)
+	switch cfg.Service.Role {
+	case "web":
+		return newWebApp(cfg)
+	case "analysis":
+		return newAnalysisApp(cfg)
+	default:
+		return nil, fmt.Errorf("unsupported service role: %s", cfg.Service.Role)
 	}
-
-	handler, err := buildHandler(cfg, errorLogger)
-	if err != nil {
-		return nil, fmt.Errorf("initialize handler: %w", err)
-	}
-
-	return &App{
-		Handler: handler,
-		Address: ":" + cfg.Server.Port,
-		Port:    cfg.Server.Port,
-	}, nil
 }
 
-func buildHandler(cfg *config.Config, errorLogger logging.Logger) (http.Handler, error) {
-	httpClient := httpclient.NewDefaultHTTPClientWithConfig(
-		httpclient.NewClientConfig(
-			cfg.HTTPTimeout(),
-			cfg.HTTPClient.MaxRedirects,
-			cfg.HTTPClient.InsecureSkipVerify,
-		),
-	)
+func newWebApp(cfg *config.Config) (*App, error) {
+	serviceClient := api.NewAnalysisClient(cfg.AnalysisAPI.BaseURL, &http.Client{
+		Timeout: cfg.AnalysisAPITimeout(),
+	})
 
-	analyzerService := services.NewAnalyzerService(
-		analyzer.NewAnalyzer(httpClient, newPageRenderer(cfg)),
-		newResultCache(cfg),
-		errorLogger,
-		cfg.CacheTTL(),
-	)
-
-	handler, err := handlers.NewHandler(analyzerService, cfg.TemplatePaths.Index)
+	handler, err := handlers.NewHandler(serviceClient, cfg.TemplatePaths.Index)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("initialize handler: %w", err)
 	}
 
 	mux := http.NewServeMux()
@@ -67,27 +50,27 @@ func buildHandler(cfg *config.Config, errorLogger logging.Logger) (http.Handler,
 	mux.HandleFunc("/", handler.Home)
 	mux.HandleFunc("/analyze", handler.Analyze)
 
-	return mux, nil
+	return newRuntimeApp(cfg.Server.Port, mux), nil
 }
 
-func newPageRenderer(cfg *config.Config) analyzer.PageRenderer {
-	if !cfg.Browser.Enabled {
-		return nil
+func newAnalysisApp(cfg *config.Config) (*App, error) {
+	errorLogger, err := buildLogger(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("initialize logger: %w", err)
 	}
 
-	return browser.NewChromeRendererWithConfig(cfg.Browser.Command, cfg.BrowserTimeout())
-}
-
-func newResultCache(cfg *config.Config) cache.ResultCache {
-	if !cfg.Cache.Enabled {
-		return nil
-	}
-
-	return cache.NewRedisResultCache(
-		cfg.Cache.Redis.Addr,
-		cfg.Cache.Redis.Password,
-		cfg.Cache.Redis.DB,
+	mux := http.NewServeMux()
+	analyzerService := services.NewAnalyzerService(
+		analyzer.NewAnalyzer(newHTTPClient(cfg), newPageRenderer(cfg)),
+		newResultCache(cfg),
+		errorLogger,
+		cfg.CacheTTL(),
 	)
+	apiHandler := api.NewAnalysisHandler(analyzerService)
+	mux.HandleFunc("/api/v1/analyze", apiHandler.Analyze)
+	mux.HandleFunc("/api/v1/health", apiHandler.Health)
+
+	return newRuntimeApp(cfg.Server.Port, mux), nil
 }
 
 func buildLogger(cfg *config.Config) (logging.Logger, error) {
@@ -127,4 +110,42 @@ func buildLogger(cfg *config.Config) (logging.Logger, error) {
 	}
 
 	return logging.NewMultiLogger(sinks...), nil
+}
+
+func newRuntimeApp(port string, handler http.Handler) *App {
+	return &App{
+		Handler: handler,
+		Address: ":" + port,
+		Port:    port,
+	}
+}
+
+func newHTTPClient(cfg *config.Config) analyzer.HTTPClient {
+	return httpclient.NewDefaultHTTPClientWithConfig(
+		httpclient.NewClientConfig(
+			cfg.HTTPTimeout(),
+			cfg.HTTPClient.MaxRedirects,
+			cfg.HTTPClient.InsecureSkipVerify,
+		),
+	)
+}
+
+func newPageRenderer(cfg *config.Config) analyzer.PageRenderer {
+	if !cfg.Browser.Enabled {
+		return nil
+	}
+
+	return browser.NewChromeRendererWithConfig(cfg.Browser.Command, cfg.BrowserTimeout())
+}
+
+func newResultCache(cfg *config.Config) cache.ResultCache {
+	if !cfg.Cache.Enabled {
+		return nil
+	}
+
+	return cache.NewRedisResultCache(
+		cfg.Cache.Redis.Addr,
+		cfg.Cache.Redis.Password,
+		cfg.Cache.Redis.DB,
+	)
 }

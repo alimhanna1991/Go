@@ -1,8 +1,8 @@
 service:
-  role: "web"
+  role: "analysis"
 
 server:
-  port: "8080"
+  port: "8081"
 
 http_client:
   timeout_seconds: 10
