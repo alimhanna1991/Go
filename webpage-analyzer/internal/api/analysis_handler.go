@@ -1,20 +1,24 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 
 	"webpage-analyzer/internal/models"
-	"webpage-analyzer/internal/services"
 )
+
+type analysisService interface {
+	AnalyzeURL(ctx context.Context, url string) (*models.AnalysisResult, error)
+}
 
 // AnalysisHandler exposes the analysis use case over HTTP.
 type AnalysisHandler struct {
-	service services.AnalyzerService
+	service analysisService
 }
 
 // NewAnalysisHandler creates a new API handler.
-func NewAnalysisHandler(service services.AnalyzerService) *AnalysisHandler {
+func NewAnalysisHandler(service analysisService) *AnalysisHandler {
 	return &AnalysisHandler{service: service}
 }
 

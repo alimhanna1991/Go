@@ -2,21 +2,25 @@ package handlers
 
 import (
 	"bytes"
+	"context"
 	"html/template"
 	"net/http"
 
 	"webpage-analyzer/internal/models"
-	"webpage-analyzer/internal/services"
 )
+
+type analysisService interface {
+	AnalyzeURL(ctx context.Context, url string) (*models.AnalysisResult, error)
+}
 
 // Handler handles HTTP requests
 type Handler struct {
-	analyzerService services.AnalyzerService
+	analyzerService analysisService
 	template        *template.Template
 }
 
 // NewHandler creates a new handler with dependencies
-func NewHandler(analyzerService services.AnalyzerService, templatePath string) (*Handler, error) {
+func NewHandler(analyzerService analysisService, templatePath string) (*Handler, error) {
 	tmpl, err := template.ParseFiles(templatePath)
 	if err != nil {
 		return nil, err
@@ -26,7 +30,7 @@ func NewHandler(analyzerService services.AnalyzerService, templatePath string) (
 }
 
 // NewHandlerWithTemplate creates a handler with an injected template for testability.
-func NewHandlerWithTemplate(analyzerService services.AnalyzerService, tmpl *template.Template) *Handler {
+func NewHandlerWithTemplate(analyzerService analysisService, tmpl *template.Template) *Handler {
 	return &Handler{
 		analyzerService: analyzerService,
 		template:        tmpl,
