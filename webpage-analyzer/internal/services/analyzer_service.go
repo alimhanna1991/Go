@@ -11,7 +11,7 @@ import (
 
 // AnalyzerService defines the service interface
 type AnalyzerService interface {
-	AnalyzeURL(url string) (*models.AnalysisResult, error)
+	AnalyzeURL(ctx context.Context, url string) (*models.AnalysisResult, error)
 }
 
 // DefaultAnalyzerService implements AnalyzerService
@@ -41,9 +41,10 @@ func NewAnalyzerService(engine analyzerEngine, resultCache cache.ResultCache, lo
 }
 
 // AnalyzeURL performs URL analysis
-func (s *DefaultAnalyzerService) AnalyzeURL(url string) (*models.AnalysisResult, error) {
-	ctx := context.Background()
-
+func (s *DefaultAnalyzerService) AnalyzeURL(ctx context.Context, url string) (*models.AnalysisResult, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	if s.cache != nil {
 		cached, found, err := s.cache.Get(ctx, url)
 		if err != nil {

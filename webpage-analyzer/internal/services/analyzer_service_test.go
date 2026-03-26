@@ -53,7 +53,7 @@ func TestAnalyzerService_UsesCacheHit(t *testing.T) {
 	analyzer := &stubAnalyzer{}
 
 	service := NewAnalyzerService(analyzer, cache, &stubLogger{}, 5*time.Minute)
-	result, err := service.AnalyzeURL("https://example.com")
+	result, err := service.AnalyzeURL(context.Background(), "https://example.com")
 	if err != nil {
 		t.Fatalf("AnalyzeURL() returned error: %v", err)
 	}
@@ -72,7 +72,7 @@ func TestAnalyzerService_CachesAnalyzerResult(t *testing.T) {
 	cache := &stubCache{}
 
 	service := NewAnalyzerService(analyzer, cache, &stubLogger{}, 5*time.Minute)
-	result, err := service.AnalyzeURL("https://example.com")
+	result, err := service.AnalyzeURL(context.Background(), "https://example.com")
 	if err != nil {
 		t.Fatalf("AnalyzeURL() returned error: %v", err)
 	}
@@ -93,7 +93,7 @@ func TestAnalyzerService_LogsAnalyzerErrors(t *testing.T) {
 	logger := &stubLogger{}
 
 	service := NewAnalyzerService(analyzer, nil, logger, 5*time.Minute)
-	_, err := service.AnalyzeURL("https://example.com")
+	_, err := service.AnalyzeURL(context.Background(), "https://example.com")
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
@@ -102,5 +102,22 @@ func TestAnalyzerService_LogsAnalyzerErrors(t *testing.T) {
 	}
 	if logger.entries[0].Message != expectedErr.Error() {
 		t.Fatalf("expected log message %q, got %q", expectedErr.Error(), logger.entries[0].Message)
+	}
+}
+
+func TestAnalyzerService_UsesProvidedContext(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	cache := &stubCache{getErr: context.Canceled}
+	logger := &stubLogger{}
+	service := NewAnalyzerService(&stubAnalyzer{result: &models.AnalysisResult{}}, cache, logger, 5*time.Minute)
+
+	_, err := service.AnalyzeURL(ctx, "https://example.com")
+	if err != nil {
+		t.Fatalf("expected cache cancellation to be logged but not returned, got %v", err)
+	}
+	if len(logger.entries) == 0 || logger.entries[0].Message != context.Canceled.Error() {
+		t.Fatalf("expected cancellation log entry, got %+v", logger.entries)
 	}
 }

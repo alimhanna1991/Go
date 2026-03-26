@@ -131,6 +131,28 @@ func TestAnalyzer_Analyze(t *testing.T) {
 				}
 			},
 		},
+		{
+			name:       "Localhost target is rejected",
+			url:        "http://localhost:8080",
+			mockClient: &MockHTTPClient{},
+			wantErr:    true,
+			validate: func(t *testing.T, result *AnalysisResult) {
+				if result.ErrorMessage == "" {
+					t.Error("expected error message for blocked localhost target")
+				}
+			},
+		},
+		{
+			name:       "Private IP target is rejected",
+			url:        "http://192.168.1.10",
+			mockClient: &MockHTTPClient{},
+			wantErr:    true,
+			validate: func(t *testing.T, result *AnalysisResult) {
+				if result.ErrorMessage == "" {
+					t.Error("expected error message for blocked private target")
+				}
+			},
+		},
 	}
 
 	for _, tt := range tests {

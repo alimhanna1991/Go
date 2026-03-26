@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"html/template"
 	"net/http"
 	"net/http/httptest"
@@ -15,7 +16,7 @@ type MockAnalyzerService struct {
 	Result     *models.AnalysisResult
 }
 
-func (m *MockAnalyzerService) AnalyzeURL(url string) (*models.AnalysisResult, error) {
+func (m *MockAnalyzerService) AnalyzeURL(ctx context.Context, url string) (*models.AnalysisResult, error) {
 	if m.ShouldFail {
 		return &models.AnalysisResult{
 			URL:          url,

@@ -65,7 +65,7 @@ func (h *Handler) Analyze(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := h.analyzerService.AnalyzeURL(targetURL)
+	result, err := h.analyzerService.AnalyzeURL(r.Context(), targetURL)
 	if err != nil && (result == nil || result.ErrorMessage == "") {
 		result = &models.AnalysisResult{
 			URL:          targetURL,

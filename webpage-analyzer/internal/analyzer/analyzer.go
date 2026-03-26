@@ -2,6 +2,7 @@ package analyzer
 
 import (
 	"fmt"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -123,8 +124,16 @@ func (a *Analyzer) normalizeURL(rawURL string) (string, error) {
 		parsedURL.Scheme = "http"
 	}
 
+	if parsedURL.Scheme != "http" && parsedURL.Scheme != "https" {
+		return "", fmt.Errorf("invalid URL scheme: only http and https are supported")
+	}
+
 	if parsedURL.Host == "" {
 		return "", fmt.Errorf("invalid URL format: missing host")
+	}
+
+	if err := validateTargetHost(parsedURL.Hostname()); err != nil {
+		return "", err
 	}
 
 	return parsedURL.String(), nil
@@ -145,6 +154,28 @@ func looksLikeHost(value string) bool {
 	}
 
 	return false
+}
+
+func validateTargetHost(host string) error {
+	normalizedHost := strings.TrimSpace(strings.ToLower(host))
+	if normalizedHost == "" {
+		return fmt.Errorf("invalid URL format: missing host")
+	}
+
+	if normalizedHost == "localhost" {
+		return fmt.Errorf("target host is not allowed")
+	}
+
+	ip := net.ParseIP(normalizedHost)
+	if ip == nil {
+		return nil
+	}
+
+	if ip.IsLoopback() || ip.IsPrivate() || ip.IsUnspecified() || ip.IsMulticast() || ip.IsLinkLocalMulticast() || ip.IsLinkLocalUnicast() {
+		return fmt.Errorf("target host is not allowed")
+	}
+
+	return nil
 }
 
 func (a *Analyzer) renderDocument(targetURL string) (*html.Node, error) {
