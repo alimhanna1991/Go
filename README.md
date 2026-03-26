@@ -131,6 +131,24 @@ The Jenkins pipeline:
 
 The pipeline is defined in [`/Jenkinsfile`](/Jenkinsfile).
 
+## Git Flow
+
+This repository should follow a simple git-flow branching model:
+
+- `master`: production-ready branch
+- `develop`: integration branch for upcoming work
+- `feature/<name>`: feature branches created from `develop`
+- `release/<version>`: release preparation branches created from `develop`
+- `hotfix/<name>`: urgent production fixes created from `master`
+
+Recommended flow:
+
+1. Create feature work from `develop`
+2. Merge finished features back into `develop`
+3. Create a `release/*` branch when preparing a release
+4. Merge releases into both `master` and `develop`
+5. Create `hotfix/*` branches from `master` for urgent fixes, then merge them into both `master` and `develop`
+
 ## Notes
 
 - The headless browser fallback used for login detection depends on Chromium/Chrome being available in the runtime environment.

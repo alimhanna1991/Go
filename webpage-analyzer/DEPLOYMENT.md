@@ -35,6 +35,15 @@ The listening port is controlled by:
 5. If Elasticsearch logging is required, enable the backend in config and start the observability profile from Compose.
 6. Place the service behind Nginx or another reverse proxy for external access.
 
+## Git Flow
+
+- `master` is the production-ready branch.
+- `develop` is the integration branch for ongoing work.
+- New features should be created as `feature/<name>` from `develop`.
+- Release preparation should happen in `release/<version>` branches from `develop`.
+- Emergency production fixes should use `hotfix/<name>` branches from `master`.
+- Release and hotfix branches should be merged back into both `master` and `develop`.
+
 ## Decisions And Assumptions
 
 - The application is implemented as a modular monolith, not microservices, because the scope does not justify distributed complexity.
