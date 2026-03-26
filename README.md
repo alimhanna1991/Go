@@ -32,7 +32,7 @@ For build, Docker usage, deployment notes, assumptions, and application improvem
 ## Local Run
 
 ```bash
-cd /home/ali/Projects/Go/webpage-analyzer
+cd /Go/webpage-analyzer
 go mod download
 ```
 
@@ -42,14 +42,14 @@ The analysis service sample config is [`/webpage-analyzer/config/app.analysis.ya
 Run the web service:
 
 ```bash
-cd /home/ali/Projects/Go/webpage-analyzer
+cd /Go/webpage-analyzer
 go run .
 ```
 
 Run the analysis service:
 
 ```bash
-cd /home/ali/Projects/Go/webpage-analyzer
+cd /Go/webpage-analyzer
 APP_CONFIG_PATH=config/app.analysis.yaml go run .
 ```
 
@@ -113,7 +113,7 @@ Docker build, `DockerUp` / `DockerDown`, Compose usage, and deployment details a
 Run tests from the application directory:
 
 ```bash
-cd /home/ali/Projects/Go/webpage-analyzer
+cd /Go/webpage-analyzer
 go test ./...
 ```
 
