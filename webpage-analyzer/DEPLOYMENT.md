@@ -62,4 +62,4 @@ The listening port is controlled by:
 - Add retry policies and circuit breaking for outbound HTTP, Redis, and Elasticsearch operations.
 - Expose a JSON API alongside the server-rendered HTML interface.
 - Add cache invalidation controls and freshness metadata so users can understand when cached results were produced.
-- Can add Resolvers ( GraphQl or REST API ) for Mobile app .
+- Add a public API layer, such as REST or GraphQL, for mobile app integration.
