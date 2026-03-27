@@ -84,3 +84,4 @@ The service role and listening port are controlled by:
 - Add retry policies and circuit breaking for outbound HTTP, Redis, and Elasticsearch operations.
 - Expose a JSON API alongside the server-rendered HTML interface.
 - Add cache invalidation controls and freshness metadata so users can understand when cached results were produced.
+- Add mobile Endpoints ( REST , GraphQl) .
